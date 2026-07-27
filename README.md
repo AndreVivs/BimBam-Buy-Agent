@@ -33,6 +33,7 @@ El agente puede responder preguntas simples sobre una sola política y también 
 * Manejo centralizado de configuración y logging.
 * Gestión segura de claves mediante variables de entorno.
 
+---
 ## Arquitectura de la solución implementada.
 La solución implementa una arquitectura RAG modular orientada a documentos. El sistema separa la construcción del índice vectorial, la recuperación de información, la selección de herramientas y la generación de la respuesta final.
 
@@ -87,7 +88,6 @@ Sintetiza una respuesta final utilizando el contenido recuperado.
 Las herramientas actúan como una capa de acceso controlado a los retrievers. De esta forma, una consulta sobre envíos puede dirigirse únicamente al conocimiento relacionado con envíos, mientras que una consulta combinada puede utilizar varias herramientas.
 ```
 
----
 ### Flujo de construcción del índice vectorial
 
 ```text
@@ -116,7 +116,6 @@ vectorstore/
 Este flujo se ejecuta cuando todavía no existe un índice vectorial válido. En ejecuciones posteriores, el sistema carga el índice almacenado localmente.
 ```
 
----
 ### Flujo de inicialización del conocimiento
 ```text
 vectorstore.py
@@ -145,7 +144,6 @@ agent.py
 Este flujo no vuelve a generar los documentos ni los embeddings. Su función es preparar los componentes que el agente necesita para consultar el índice existente.
 ```
 
----
 ### Estructura del proyecto
 
 ```text
@@ -278,16 +276,15 @@ Consulta `requirements.txt` para revisar las versiones utilizadas.
 
 El proyecto ejecuta los embeddings localmente. No requiere utilizar la API de inferencia de Hugging Face para modelos públicos.
 
----
-## Instrucciones de Instalación
+### Instrucciones de Instalación
 
-### 1. Clonar el repositorio
+#### 1. Clonar el repositorio
 ```bash
 git clone https://github.com/AndreVivs/BimBam-Buy-Agent.git
 cd bimbam-buy-agent
 ```
----
-### 2. Crear un entorno virtual
+
+#### 2. Crear un entorno virtual
 En Windows:
 ```cmd
 python -m venv .venv
@@ -296,8 +293,8 @@ En macOS o Linux:
 ```bash
 python3 -m venv .venv
 ```
----
-### 3. Activar el entorno virtual
+
+#### 3. Activar el entorno virtual
 Windows CMD:
 ```cmd
 .venv\Scripts\activate
@@ -310,13 +307,14 @@ macOS o Linux:
 ```bash
 source .venv/bin/activate
 ```
----
-### 4. Instalar las dependencias
+
+#### 4. Instalar las dependencias
 ```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
-### 5. Agregar variables de entorno
+
+#### 5. Agregar variables de entorno
 Crea un archivo `.env` en la raíz del proyecto.
 ```env
 GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxx
@@ -345,7 +343,6 @@ Streamlit mostrará una dirección local similar a:
 http://localhost:8501
 ```
 
----
 ## Construcción del índice vectorial
 
 Cuando el proyecto se ejecuta por primera vez:
@@ -400,7 +397,6 @@ Objetivo:
 ```
 <img width="1118" height="633" alt="image" src="https://github.com/user-attachments/assets/ee725f49-cb00-4b69-9de6-d1810ea6b2ab" />
 
----
 #### Métodos de pago
 
 ```text
@@ -413,7 +409,6 @@ Objetivo:
 ```
 <img width="1090" height="632" alt="image" src="https://github.com/user-attachments/assets/35b65324-c227-4d5f-a462-855f631c7cb7" />
 
----
 #### Garantías
 ```text
 ¿Cuánto dura la garantía de un producto?
@@ -425,7 +420,6 @@ Objetivo:
 ```
 <img width="982" height="607" alt="image" src="https://github.com/user-attachments/assets/a360a764-a055-43cd-a17e-05143ef21d47" />
 
----
 #### Reembolsos y Devoluciones
 ```text
 ¿Cómo puedo hacer una devolucion y en cuánto tiempo me rembolsan mi dinero?
@@ -437,7 +431,6 @@ Objetivo:
 ```
 <img width="877" height="676" alt="image" src="https://github.com/user-attachments/assets/4c3c3688-574e-4856-9195-d4ab6101c979" />
 
----
 #### Programa de Afiliados
 ```text
 ¿Qué es el programa de afiliados?
@@ -449,7 +442,6 @@ Objetivo:
 ```
 <img width="872" height="567" alt="image" src="https://github.com/user-attachments/assets/0c9b6380-209e-4a14-a7ab-7723ce68af0d" />
 
----
 ### Recuperación múltiple
 Realiza preguntas que combinen envíos, pagos, garantías o devoluciones.
 Objetivo:
@@ -478,7 +470,6 @@ Necesito ayuda con mi compra.
 Quiero recuperar mi dinero.
 ```
 
----
 ### Información inexistente
 Realiza preguntas con informacion no proporcionada para verificar que el agente no alucine.
 Objetivo:
@@ -489,7 +480,6 @@ Ejemplo:
 ¿BimBam Buy acepta pagos con Bitcoin?
 ```
 
----
 ### Preguntas fuera del dominio
 Realiza preguntas que no estan al alce de las delimitaciones del agente
 Objetivo:
@@ -500,7 +490,6 @@ Ejemplo:
 ¿Cuál es el clima de hoy?
 ```
 
----
 ### Resistencia a instrucciones maliciosas
 Realiza peticiones que cambien las instrucciones dadas al agente
 Objetivo:
@@ -527,7 +516,6 @@ El proyecto cuenta actualmente con:
 * historial durante la sesión;
 * manejo básico de errores.
 
----
 ## Limitaciones actuales
 
 * El historial se conserva solo durante la sesión de Streamlit.
@@ -539,7 +527,6 @@ El proyecto cuenta actualmente con:
 * No se incluyen métricas automáticas de evaluación del RAG.
 * Las citas de página y documento todavía pueden ampliarse en la interfaz.
 
----
 ## Posibles mejoras
 
 * Mostrar citas y páginas utilizadas en cada respuesta.
