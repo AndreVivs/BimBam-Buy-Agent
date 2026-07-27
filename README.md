@@ -398,62 +398,74 @@ vectorstore/
 y vuelve a ejecutar la aplicación.
 
 ---
+## Ejemplos de uso (Preguntas y Respuestas)
 
-## Ejemplos de uso (Inputs & Outputs)
 ### Envíos
 ```text
 ¿Cuánto tarda un envío nacional?
 ```
 <img width="1117" height="506" alt="image" src="https://github.com/user-attachments/assets/286ca93a-056d-421b-91ea-14c692a04435" />
 
-
 ```text
 ¿Cómo puedo rastrear mi pedido?
 ```
-
-```text
-¿Qué ocurre si mi paquete llega tarde?
-```
+<img width="1118" height="633" alt="image" src="https://github.com/user-attachments/assets/ee725f49-cb00-4b69-9de6-d1810ea6b2ab" />
 
 ---
-
-### Preguntas sobre pagos
+### Métodos de pago
 
 ```text
 ¿Qué métodos de pago aceptan?
 ```
-
-```text
-¿Cuánto tarda en validarse una transferencia?
-```
+<img width="1097" height="625" alt="image" src="https://github.com/user-attachments/assets/2f362b60-5060-492e-a149-f371685fd87a" />
 
 ```text
 ¿Qué hago si mi pago fue rechazado?
 ```
+<img width="1090" height="632" alt="image" src="https://github.com/user-attachments/assets/35b65324-c227-4d5f-a462-855f631c7cb7" />
 
 ---
-
-### Preguntas sobre garantías
-
+### Garantías
 ```text
 ¿Cuánto dura la garantía de un producto?
 ```
-
-```text
-¿Qué situaciones no cubre la garantía?
-```
+<img width="1097" height="562" alt="image" src="https://github.com/user-attachments/assets/b9149416-cb02-4c26-8552-89031b999a98" />
 
 ```text
 ¿Cómo solicito una garantía?
 ```
+<img width="982" height="607" alt="image" src="https://github.com/user-attachments/assets/a360a764-a055-43cd-a17e-05143ef21d47" />
 
 ---
+### Reembolsos y Devoluciones
+```text
+¿Cómo puedo hacer una devolucion y en cuánto tiempo me rembolsan mi dinero?
+```
+<img width="877" height="682" alt="image" src="https://github.com/user-attachments/assets/fc60d8ec-dfa8-4fd6-84b3-5df4c33adea9" />
+
+```text
+¿Qué puedo hacer si ya hice la devolucion y aun no veo la devolucion de mi dinero?
+```
+<img width="877" height="676" alt="image" src="https://github.com/user-attachments/assets/4c3c3688-574e-4856-9195-d4ab6101c979" />
+
+---
+### Programa de Afiliados
+```text
+¿Qué es el programa de afiliados?
+```
+<img width="875" height="655" alt="image" src="https://github.com/user-attachments/assets/d577458e-c397-4472-bd0a-fe0738407c67" />
+
+```text
+¿Cuál es el proceso para que me depositen el dinero obtenido con el programa de afiliados?
+```
+<img width="872" height="567" alt="image" src="https://github.com/user-attachments/assets/0c9b6380-209e-4a14-a7ab-7723ce68af0d" />
 
 ### Preguntas combinadas
 
 ```text
 Compré un producto con tarjeta, quiero devolverlo y saber cuándo recuperaré mi dinero.
 ```
+<img width="871" height="592" alt="image" src="https://github.com/user-attachments/assets/b11cf392-0449-46e0-bf99-8256c628133b" />
 
 ```text
 El producto llegó dañado. ¿Debo solicitar una garantía o una devolución?
