@@ -10,12 +10,12 @@ BimBam Agent es un Agente conversacional basado en RAG que brinda informacion en
 
 El proyecto utiliza LangChain, Groq, Hugging Face, FAISS y Streamlit para cargar documentos PDF, clasificarlos por categoría, recuperar información relevante y generar respuestas contextualizadas mediante tool calling nativo.
 
-## Descripción del proyecto
+## 1. Descripción del proyecto
 El sistema analiza la pregunta del usuario, identifica la categoría correspondiente, consulta uno o varios documentos y genera una respuesta utilizando exclusivamente la información recuperada.
 
 El agente puede responder preguntas simples sobre una sola política y también combinar información procedente de varias categorías.
 
-## Características principales
+### Características principales
 
 * Carga automática de documentos PDF.
 * Clasificación de documentos mediante metadatos.
@@ -34,7 +34,7 @@ El agente puede responder preguntas simples sobre una sola política y también 
 * Gestión segura de claves mediante variables de entorno.
 
 ---
-## Arquitectura de la solución implementada.
+## 2. Arquitectura de la solución implementada.
 La solución implementa una arquitectura RAG modular orientada a documentos. El sistema separa la construcción del índice vectorial, la recuperación de información, la selección de herramientas y la generación de la respuesta final.
 
 ### Flujo de consulta
@@ -224,7 +224,7 @@ Esta carpeta se genera localmente y no necesita almacenarse en el repositorio. P
 * README.md: contiene la documentación del proyecto.
 
 ---
-## Tecnologías utilizadas
+## 3. Tecnologías utilizadas
 
 ### Lenguaje de programación
 - Python 3 - Lenguaje principal del proyecto
@@ -265,7 +265,7 @@ python-dotenv
 Consulta `requirements.txt` para revisar las versiones utilizadas.
 
 ---
-## Requisitos e Instrucciones de Instalación 
+## 4. Requisitos e Instrucciones de Instalación 
 
 ### Requisitos
 * Python 3.11 o superior.
@@ -365,7 +365,7 @@ vectorstore/
 y vuelve a ejecutar la aplicación.
 
 ---
-## Ejemplos de uso (Preguntas y Respuestas)
+## 5. Ejemplos de uso (Preguntas y Respuestas que el agente puede responder)
 
 ### Comportamiento esperado
 El agente debe:
@@ -457,6 +457,7 @@ Compré un monitor con tarjeta de crédito. Quiero saber cuándo llegará, si pu
 ```
 
 ---
+## 6. Otros ejemplos de uso (Testing)
 ### Preguntas ambiguas
 Realiza preguntas no especificas
 Objetivo:
