@@ -34,7 +34,9 @@ El agente puede responder preguntas simples sobre una sola política y también 
 * Gestión segura de claves mediante variables de entorno.
 
 ## Arquitectura de la solución implementada.
-### Arquitectura
+La solución implementa una arquitectura RAG modular orientada a documentos. El sistema separa la construcción del índice vectorial, la recuperación de información, la selección de herramientas y la generación de la respuesta final.
+
+### Flujo de consulta
 
 ```text
 Usuario
@@ -43,52 +45,104 @@ Usuario
 Streamlit / Consola
   │
   ▼
-Agent
+agent.py
   │
-  ├── Selección de herramientas
-  │
-  ├── Ejecución de retrievers
-  │
-  └── Síntesis de la respuesta
-  │
-  ▼
-Tools
+  ├── Recibe la pregunta y el historial
+  ├── Envía la consulta al LLM
+  ├── Selecciona una o varias herramientas
+  ├── Ejecuta las herramientas seleccionadas
+  └── Solicita al LLM la síntesis de la respuesta
   │
   ▼
-Knowledge
+tools.py
+  │
+  ├── Herramienta de envíos
+  ├── Herramienta de pagos
+  ├── Herramienta de garantías
+  ├── Herramienta de devoluciones y reembolsos
+  └── Herramienta de afiliados
   │
   ▼
-Retrievers
+knowledge.py
+  │
+  └── Inicializa y proporciona los retrievers disponibles
+  │
+  ▼
+retriever.py
+  │
+  ├── Retriever general
+  └── Retrievers especializados por categoría
   │
   ▼
 FAISS Vector Store
   │
   ▼
-Chunks de documentos PDF
+Fragmentos de documentos con metadatos
+
+El modelo de lenguaje participa en dos momentos:
+
+Analiza la consulta y selecciona las herramientas necesarias.
+Sintetiza una respuesta final utilizando el contenido recuperado.
+
+Las herramientas actúan como una capa de acceso controlado a los retrievers. De esta forma, una consulta sobre envíos puede dirigirse únicamente al conocimiento relacionado con envíos, mientras que una consulta combinada puede utilizar varias herramientas.
 ```
 
-El proceso de construcción de conocimiento sigue este flujo:
+---
+### Flujo de construcción del índice vectorial
 
 ```text
-PDFs
+Documentos PDF
   │
   ▼
 loaders.py
   │
+  ├── Localiza los archivos
+  ├── Extrae el contenido
+  └── Asigna metadatos y categorías
+  │
   ▼
+vectorstore.py
+  │
+  ├── Divide los documentos en fragmentos
+  ├── Genera los embeddings
+  ├── Construye el índice FAISS
+  └── Guarda el índice localmente
+  │
+  ▼
+vectorstore/
+  ├── index.faiss
+  └── index.pkl
+
+Este flujo se ejecuta cuando todavía no existe un índice vectorial válido. En ejecuciones posteriores, el sistema carga el índice almacenado localmente.
+```
+
+---
+### Flujo de inicialización del conocimiento
+```text
 vectorstore.py
   │
   ▼
 retriever.py
   │
+  ├── Configura la estrategia de búsqueda
+  └── Aplica filtros por categoría
+  │
   ▼
 knowledge.py
+  │
+  └── Registra e inicializa los retrievers
   │
   ▼
 tools.py
   │
+  └── Expone cada retriever como una herramienta
+  │
   ▼
 agent.py
+  │
+  └── Vincula las herramientas con el LLM
+
+Este flujo no vuelve a generar los documentos ni los embeddings. Su función es preparar los componentes que el agente necesita para consultar el índice existente.
 ```
 
 ---
@@ -113,8 +167,8 @@ BimBam-Buy-Agent/
 ├── documents/
 │   ├── garantia de productos.pdf (garantias)
 │   ├── metodos de pago.pdf (pagos)
-│   ├── programa de afiliados (afiliados)
-│   ├── reembolsos y devoluciones (reembolsos)
+│   ├── programa de afiliados.pdf (afiliados)
+│   ├── reembolsos y devoluciones.pdf (reembolsos)
 │   └── tiempos y costos de envio.pdf (envios)
 │
 ├── vectorstore/
@@ -131,163 +185,45 @@ La carpeta `vectorstore/` se genera localmente y no es necesario almacenarla en 
 
 ## Responsabilidad de cada módulo
 
-### `config.py`
-Centraliza las variables de configuración del proyecto incluyendo parámetros relacionados con:
-* rutas de documentos;
-* ubicación del índice FAISS;
-* modelo de embeddings;
-* modelo de lenguaje;
-* cantidad de resultados recuperados;
-* configuración de MMR;
-* variables de entorno.
+### Directorio app/
+Contiene la lógica principal de la aplicación:
+* agent.py: coordina el LLM, las herramientas y la generación de respuestas.
+* config.py: centraliza rutas, modelos y parámetros de configuración.
+* knowledge.py: inicializa y registra los retrievers disponibles.
+* llm.py: configura el modelo de lenguaje utilizado mediante Groq.
+* loaders.py: carga los archivos PDF y asigna sus metadatos.
+* logger.py: proporciona una configuración uniforme de logging.
+* prompts.py: contiene las instrucciones del sistema y las reglas de respuesta.
+* retriever.py: crea los retrievers generales y especializados.
+* tools.py: convierte los retrievers en herramientas para el agente.
+* vectorstore.py: construye, guarda y carga el índice vectorial FAISS.
 
----
-### `logger.py`
-Proporciona una configuración uniforme de logging para todos los módulos.
-Cada componente puede obtener su logger mediante:
+### Directorio documents/
+Contiene los documentos que forman la base de conocimiento del agente.
+Cada documento se clasifica mediante un metadato de categoría:
 
-```python
-from app.logger import get_logger
-logger = get_logger(__name__)
-```
+* garantia de productos.pdf          → garantias
+* metodos de pago.pdf                → pagos
+* programa de afiliados.pdf          → afiliados
+* reembolsos y devoluciones.pdf      → reembolsos
+* tiempos y costos de envio.pdf      → envios
 
----
-### `loaders.py`
-Se encarga de:
+### Directorio vectorstore/
+Contiene el índice vectorial generado por FAISS:
 
-* localizar los archivos PDF;
-* cargar su contenido;
-* identificar la categoría de cada documento;
-* agregar la categoría a los metadatos;
-* rechazar documentos no reconocidos.
+* index.faiss: almacena los vectores.
+* index.pkl: almacena la información necesaria para relacionar los vectores con los documentos y sus metadatos.
 
-Ejemplo de metadatos:
+Esta carpeta se genera localmente y no necesita almacenarse en el repositorio. Para reconstruir el índice, se puede eliminar el directorio vectorstore/ y volver a ejecutar la aplicación.
 
-```python
-{
-    "source": "documents/envios.pdf",
-    "page": 0,
-    "categoria": "envios"
-}
-```
-
----
-
-### `vectorstore.py`
-Gestiona el ciclo de vida del índice vectorial.
-Sus principales responsabilidades son:
-
-* crear el modelo de embeddings;
-* dividir documentos en fragmentos;
-* generar embeddings;
-* construir el índice FAISS;
-* guardar el índice localmente;
-* cargar un índice existente;
-* reconstruirlo si todavía no existe.
-
----
-### `retriever.py`
-Crea los mecanismos de recuperación.
-El proyecto utiliza dos estrategias:
-
-* Recuperación general mediante MMR.
-* Recuperación especializada mediante similitud y filtros por categoría.
-
-Los retrievers especializados evitan que una consulta sobre envíos recupere fragmentos de pagos, garantías u otras políticas.
-
----
-### `knowledge.py`
-Inicializa y organiza los retrievers disponibles.
-
-Ejemplo conceptual:
-```python
-retrievers = {
-    "general": retriever_general,
-    "envios": retriever_envios,
-    "pagos": retriever_pagos,
-    "garantias": retriever_garantias,
-}
-```
-
----
-### `tools.py`
-Convierte los retrievers especializados en herramientas que el modelo puede seleccionar.
-Ejemplos:
-
-```text
-buscar_envios
-buscar_pagos
-buscar_garantias
-buscar_reembolsos
-buscar_afiliados
-```
-
-Cada herramienta dispone de un nombre y una descripción que ayudan al modelo a decidir cuándo utilizarla.
-
----
-### `llm.py`
-Configura el modelo de lenguaje de Groq.
-El modelo se reutiliza mediante una caché para evitar crear una nueva instancia en cada consulta.
-Configuración general:
-
-```python
-ChatGroq(
-    model="llama-3.1-8b-instant",
-    temperature=0,
-    timeout=60,
-    max_retries=2,
-    disable_streaming="tool_calling",
-)
-```
-
----
-### `prompts.py`
-Contiene las instrucciones del sistema y las reglas de síntesis.
-Las instrucciones establecen que el agente debe:
-
-* utilizar herramientas cuando necesite información;
-* separar consultas pertenecientes a categorías diferentes;
-* evitar llamadas duplicadas;
-* no inventar información;
-* responder únicamente a partir de los documentos;
-* no mencionar FAISS, retrievers o herramientas internas;
-* integrar resultados de varios documentos en una respuesta coherente.
-
----
-### `agent.py`
-Implementa la orquestación del agente con tool calling nativo.
-El flujo es:
-
-1. Se envía la pregunta al modelo con las herramientas disponibles.
-2. El modelo selecciona una o varias herramientas.
-3. Las herramientas se ejecutan una sola vez.
-4. Se agregan sus resultados al contexto.
-5. El modelo genera la respuesta final sin acceso a herramientas.
-
-Esta arquitectura reemplaza el uso de `AgentExecutor` y evita ciclos de ejecución o llamadas repetidas.
-
----
-### `main.py`
-Permite utilizar el agente desde la terminal.
-Es útil para:
-
-* realizar pruebas rápidas;
-* depurar respuestas;
-* revisar herramientas utilizadas;
-* inspeccionar resultados intermedios.
-
----
-### `streamlit_app.py`
-Proporciona la interfaz web del chatbot.
-Incluye:
-
-* historial visible de mensajes;
-* entrada de texto;
-* estado de carga;
-* botón para limpiar la conversación;
-* manejo de errores;
-* historial en `st.session_state`;
-* detalles opcionales de las consultas internas.
+### Archivos principales
+* main.py: permite utilizar y probar el agente desde la consola.
+* streamlit_app.py: implementa la interfaz conversacional.
+* requirements.txt: contiene las dependencias del proyecto.
+* .env: almacena las credenciales y variables locales. No debe subirse al repositorio.
+* .env.example: muestra las variables requeridas sin incluir credenciales reales.
+* .gitignore: excluye claves, entornos virtuales, cachés e índices generados.
+* README.md: contiene la documentación del proyecto.
 
 ---
 ## Tecnologías utilizadas
