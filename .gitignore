@@ -1,0 +1,46 @@
+# Variables de entorno y credenciales
+.env
+.env.*
+!.env.example
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Logs
+*.log
+logs/
+
+# Índice vectorial generado
+vectorstore/
+*.faiss
+*.pkl
+
+# Cachés de modelos
+.cache/
+huggingface/
+models/
+
+# Archivos temporales
+*.tmp
+*.temp
