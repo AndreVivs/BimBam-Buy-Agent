@@ -10,13 +10,11 @@ BimBam Agent es un Agente conversacional basado en RAG que brinda informacion en
 
 El proyecto utiliza LangChain, Groq, Hugging Face, FAISS y Streamlit para cargar documentos PDF, clasificarlos por categoría, recuperar información relevante y generar respuestas contextualizadas mediante tool calling nativo.
 
-## Descripción
-
+## Descripción del proyecto
 El sistema analiza la pregunta del usuario, identifica la categoría correspondiente, consulta uno o varios documentos y genera una respuesta utilizando exclusivamente la información recuperada.
 
 El agente puede responder preguntas simples sobre una sola política y también combinar información procedente de varias categorías.
---
---
+
 ## Características principales
 
 * Carga automática de documentos PDF.
@@ -35,8 +33,9 @@ El agente puede responder preguntas simples sobre una sola política y también 
 * Manejo centralizado de configuración y logging.
 * Gestión segura de claves mediante variables de entorno.
 
----
-## Arquitectura
+--
+## Arquitectura de la solución implementada.
+### Arquitectura
 
 ```text
 Usuario
@@ -94,8 +93,7 @@ agent.py
 ```
 
 ---
-
-## Estructura del proyecto
+### Estructura del proyecto
 
 ```text
 BimBam-Buy-Agent/
@@ -132,7 +130,6 @@ BimBam-Buy-Agent/
 ```
 La carpeta `vectorstore/` se genera localmente y no es necesario almacenarla en el repositorio.
 
----
 ## Responsabilidad de cada módulo
 
 ### `config.py`
