@@ -11,7 +11,11 @@ El flujo tiene un máximo de una ronda de recuperación:
 3. Las herramientas se ejecutan una sola vez.
 4. El LLM redacta la respuesta final sin volver a llamar herramientas.
 """
+import logging
+from typing import Any
 
+from groq import APIStatusError, RateLimitError
+from app.query_validator import QueryStatus, validate_query
 from functools import lru_cache
 from typing import Any
 
@@ -27,13 +31,16 @@ from langchain_core.tools import BaseTool
 
 from app.knowledge import cargar_conocimiento
 from app.llm import crear_llm
-from app.prompts import SYSTEM_PROMPT
 from app.tools import crear_tools
 
 from app.prompts import (
     FINAL_RESPONSE_PROMPT,
     SYSTEM_PROMPT,
 )
+
+from app.config import MAX_HISTORY_MESSAGES
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -90,7 +97,7 @@ def construir_mensajes_iniciales(
     ]
 
     if chat_history:
-        mensajes.extend(chat_history)
+        mensajes.extend(chat_history[-MAX_HISTORY_MESSAGES:])
 
     mensajes.append(
         HumanMessage(content=pregunta_limpia)
@@ -256,7 +263,7 @@ def obtener_texto_respuesta(
     return str(contenido).strip()
 
 
-def consultar_agente(
+def _procesar_consulta(
     pregunta: str,
     chat_history: list[BaseMessage] | None = None,
 ) -> dict[str, Any]:
@@ -266,24 +273,29 @@ def consultar_agente(
     El modelo puede seleccionar varias herramientas, pero solo
     existe una ronda de recuperación. La respuesta final se genera
     con el LLM sin herramientas vinculadas, evitando bucles.
-
-    Returns:
-        Diccionario con:
-        - output: respuesta final.
-        - intermediate_steps: herramientas ejecutadas.
-        - tool_calls: llamadas originales solicitadas por el LLM.
     """
 
     pregunta_limpia = pregunta.strip()
 
     if not pregunta_limpia:
-        raise ValueError(
-            "La pregunta no puede estar vacía."
-        )
+        return {
+            "output": "Escribe una pregunta para que pueda ayudarte.",
+            "intermediate_steps": [],
+            "tool_calls": [],
+            "status": "empty_query",
+        }
 
-    llm, tools, tools_por_nombre = (
-        obtener_componentes_agente()
-    )
+    validation = validate_query(pregunta_limpia)
+
+    if validation.status != QueryStatus.VALID:
+        return {
+            "output": validation.message,
+            "intermediate_steps": [],
+            "tool_calls": [],
+            "status": validation.status.value,
+        }
+
+    llm, tools, tools_por_nombre = obtener_componentes_agente()
 
     mensajes = construir_mensajes_iniciales(
         pregunta=pregunta_limpia,
@@ -306,12 +318,9 @@ def consultar_agente(
 
     tool_calls = decision.tool_calls or []
 
-    # Consulta fuera del ámbito de BimBam Buy o respuesta
-    # que no requiere recuperar políticas internas.
+    # Respuesta que no requiere recuperar documentos.
     if not tool_calls:
-        respuesta_directa = obtener_texto_respuesta(
-            decision
-        )
+        respuesta_directa = obtener_texto_respuesta(decision)
 
         if not respuesta_directa:
             respuesta_directa = (
@@ -323,6 +332,7 @@ def consultar_agente(
             "output": respuesta_directa,
             "intermediate_steps": [],
             "tool_calls": [],
+            "status": "direct_response",
         }
 
     mensajes_tools, pasos = ejecutar_tool_calls(
@@ -339,11 +349,11 @@ def consultar_agente(
             ),
             "intermediate_steps": pasos,
             "tool_calls": tool_calls,
+            "status": "retrieval_error",
         }
 
     # Segunda y última llamada:
-    # se usa el LLM base, sin herramientas vinculadas.
-    # Por eso no puede volver a ejecutar un retriever.
+    # el LLM redacta la respuesta sin herramientas vinculadas.
     mensajes_finales: list[BaseMessage] = [
         SystemMessage(
             content=(
@@ -365,18 +375,14 @@ def consultar_agente(
         ]
     )
 
-    respuesta_final = llm.invoke(
-        mensajes_finales
-    )
+    respuesta_final = llm.invoke(mensajes_finales)
 
     if not isinstance(respuesta_final, AIMessage):
         raise TypeError(
             "El modelo no devolvió una respuesta final válida."
         )
 
-    output = obtener_texto_respuesta(
-        respuesta_final
-    )
+    output = obtener_texto_respuesta(respuesta_final)
 
     if not output:
         output = (
@@ -388,4 +394,93 @@ def consultar_agente(
         "output": output,
         "intermediate_steps": pasos,
         "tool_calls": tool_calls,
+        "status": "success",
     }
+    
+    
+def consultar_agente(
+    pregunta: str,
+    chat_history: list[BaseMessage] | None = None,
+) -> dict[str, Any]:
+    """
+    Ejecuta el agente y transforma los errores de la API
+    en respuestas controladas para la interfaz.
+    """
+
+    try:
+        return _procesar_consulta(
+            pregunta=pregunta,
+            chat_history=chat_history,
+        )
+
+    except RateLimitError:
+        logger.exception(
+            "Se alcanzó un límite temporal de uso de Groq."
+        )
+
+        return {
+            "output": (
+                "El servicio alcanzó temporalmente su límite de uso. "
+                "Intenta nuevamente en unos momentos."
+            ),
+            "intermediate_steps": [],
+            "tool_calls": [],
+            "status": "rate_limit_error",
+        }
+
+    except APIStatusError as error:
+        logger.exception(
+            "Error de Groq. Código HTTP: %s",
+            error.status_code,
+        )
+
+        if error.status_code == 413:
+            return {
+                "output": (
+                    "La información recuperada fue demasiado extensa para "
+                    "procesarla. Formula una pregunta más específica sobre "
+                    "envíos, pagos, garantías, devoluciones, reembolsos "
+                    "o afiliados."
+                ),
+                "intermediate_steps": [],
+                "tool_calls": [],
+                "status": "context_too_large",
+            }
+
+        return {
+            "output": (
+                "Ocurrió un problema al consultar el modelo. "
+                "Intenta nuevamente."
+            ),
+            "intermediate_steps": [],
+            "tool_calls": [],
+            "status": "api_error",
+        }
+
+    except ValueError as error:
+        logger.warning(
+            "Consulta inválida: %s",
+            error,
+        )
+
+        return {
+            "output": str(error),
+            "intermediate_steps": [],
+            "tool_calls": [],
+            "status": "validation_error",
+        }
+
+    except Exception:
+        logger.exception(
+            "Error inesperado al procesar la consulta."
+        )
+
+        return {
+            "output": (
+                "Ocurrió un error inesperado al procesar tu consulta. "
+                "Intenta nuevamente."
+            ),
+            "intermediate_steps": [],
+            "tool_calls": [],
+            "status": "unexpected_error",
+        }
