@@ -92,3 +92,4 @@ LLM_TIMEOUT = 60
 AGENT_VERBOSE = True #nos permitirá ver qué herramienta selecciona durante las pruebas.
 AGENT_MAX_ITERATIONS = 6 #evita ciclos indefinidos
 AGENT_HANDLE_PARSING_ERRORS = True
+MAX_HISTORY_MESSAGES = 6
