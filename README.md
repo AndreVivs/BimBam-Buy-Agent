@@ -35,7 +35,7 @@ El agente puede responder preguntas simples sobre una sola política y también 
 
 ---
 ## 2. Arquitectura de la solución implementada.
-La solución implementa una arquitectura RAG modular orientada a documentos. El sistema separa la construcción del índice vectorial, la recuperación de información, la selección de herramientas y la generación de la respuesta final.
+La solución implementa una arquitectura RAG (Retrieval-Augmented Generation) modular basada en Tool Calling. Antes de consultar la base de conocimiento, el sistema valida la consulta del usuario para determinar si puede responderse, si requiere mayor información o si está fuera del dominio del asistente.
 
 ### Flujo de consulta
 
@@ -49,10 +49,30 @@ Streamlit / Consola
 agent.py
   │
   ├── Recibe la pregunta y el historial
-  ├── Envía la consulta al LLM
-  ├── Selecciona una o varias herramientas
-  ├── Ejecuta las herramientas seleccionadas
-  └── Solicita al LLM la síntesis de la respuesta
+  ├── Valida la consulta (query_validator.py)
+  │      │
+  │      ├── Consulta ambigua
+  │      │      └── Solicita más información
+  │      │
+  │      ├── Consulta fuera del dominio
+  │      │      └── Informa el alcance del asistente
+  │      │
+  │      └── Consulta válida
+  │             │
+  │             ▼
+  │      Envía la consulta al LLM
+  │             │
+  │             ▼
+  │      Selecciona una o varias herramientas
+  │             │
+  │             ▼
+  │      Ejecuta las herramientas seleccionadas
+  │             │
+  │             ▼
+  │      Solicita al LLM la síntesis de la respuesta
+  │             │
+  │             ▼
+  │      Maneja errores y devuelve la respuesta final
   │
   ▼
 tools.py
@@ -80,12 +100,15 @@ FAISS Vector Store
   ▼
 Fragmentos de documentos con metadatos
 
-El modelo de lenguaje participa en dos momentos:
+Participación del modelo de lenguaje
 
-Analiza la consulta y selecciona las herramientas necesarias.
-Sintetiza una respuesta final utilizando el contenido recuperado.
+El modelo de lenguaje interviene únicamente en dos etapas del flujo:
+1. Analiza la consulta y determina qué herramientas son necesarias para responderla.
+2. Sintetiza la respuesta final utilizando exclusivamente la información recuperada por las herramientas.
 
-Las herramientas actúan como una capa de acceso controlado a los retrievers. De esta forma, una consulta sobre envíos puede dirigirse únicamente al conocimiento relacionado con envíos, mientras que una consulta combinada puede utilizar varias herramientas.
+Las consultas ambiguas, fuera del dominio o que únicamente requieren solicitar información adicional pueden resolverse sin consultar la base de conocimiento, evitando llamadas innecesarias al modelo o a los retrievers.
+
+Las herramientas actúan como una capa de acceso controlado a los retrievers. De esta forma, una consulta sobre envíos consulta únicamente el conocimiento relacionado con envíos, mientras que una consulta que involucra varias categorías puede utilizar varias herramientas de manera independiente.
 ```
 
 ### Flujo de construcción del índice vectorial
@@ -113,7 +136,7 @@ vectorstore/
   ├── index.faiss
   └── index.pkl
 
-Este flujo se ejecuta cuando todavía no existe un índice vectorial válido. En ejecuciones posteriores, el sistema carga el índice almacenado localmente.
+Este proceso se ejecuta únicamente cuando no existe un índice vectorial válido. En las ejecuciones posteriores, el sistema reutiliza el índice almacenado localmente, evitando volver a procesar los documentos.
 ```
 
 ### Flujo de inicialización del conocimiento
@@ -158,6 +181,7 @@ BimBam-Buy-Agent/
 │   ├── loaders.py
 │   ├── logger.py
 │   ├── prompts.py
+│   ├── query_validator.py
 │   ├── retriever.py
 │   ├── tools.py
 │   └── vectorstore.py
@@ -192,6 +216,7 @@ Contiene la lógica principal de la aplicación:
 * loaders.py: carga los archivos PDF y asigna sus metadatos.
 * logger.py: proporciona una configuración uniforme de logging.
 * prompts.py: contiene las instrucciones del sistema y las reglas de respuesta.
+* query_validator.py: clasifica las consultas y filtra preguntas ambiguas o fuera del dominio antes de ejecutar el agente.
 * retriever.py: crea los retrievers generales y especializados.
 * tools.py: convierte los retrievers en herramientas para el agente.
 * vectorstore.py: construye, guarda y carga el índice vectorial FAISS.
