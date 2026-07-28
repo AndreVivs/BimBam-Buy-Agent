@@ -32,9 +32,9 @@ Thumbs.db
 logs/
 
 # Índice vectorial generado
-vectorstore/
-*.faiss
-*.pkl
+#vectorstore/
+#*.faiss
+#*.pkl
 
 # Cachés de modelos
 .cache/
