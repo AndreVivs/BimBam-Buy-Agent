@@ -10,11 +10,6 @@ import os
 
 # VARIABLES DE ENTORNO
 GROQ_API_KEY: str | None = os.getenv("GROQ_API_KEY")
-HF_TOKEN: str | None = os.getenv("HF_TOKEN")
-OLLAMA_BASE_URL: str = os.getenv(
-    "OLLAMA_BASE_URL",
-    "http://localhost:11434"
-)
 
 
 # EMBEDDINGS
