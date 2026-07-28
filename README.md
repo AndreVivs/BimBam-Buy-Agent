@@ -455,6 +455,7 @@ Compré un producto con tarjeta, quiero devolverlo y saber cuándo recuperaré m
 ```text
 Compré un monitor con tarjeta de crédito. Quiero saber cuándo llegará, si puedo devolverlo, cuánto tardará el reembolso y si puedo utilizar la garantía.
 ```
+<img width="555" height="672" alt="image" src="https://github.com/user-attachments/assets/a9b826a2-3d49-48b2-bd99-1ad4a3470794" />
 
 ---
 ## 6. Otros ejemplos de uso (Testing)
